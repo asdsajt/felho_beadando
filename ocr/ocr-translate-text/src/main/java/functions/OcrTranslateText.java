@@ -33,6 +33,10 @@ import com.google.cloud.texttospeech.v1.SynthesizeSpeechResponse;
 import com.google.cloud.texttospeech.v1.TextToSpeechClient;
 import com.google.cloud.texttospeech.v1.VoiceSelectionParams;
 import com.google.events.cloud.pubsub.v1.Message;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
@@ -50,15 +54,9 @@ public class OcrTranslateText implements BackgroundFunction<Message> {
 
   // TODO<developer> set these environment variables
   private static final String PROJECT_ID = getenv("GCP_PROJECT");
-  private static final String RESULTS_TOPIC_NAME = getenv("RESULT_TOPIC");
+  private static final String RESULT_BUCKET = System.getenv("RESULT_BUCKET");
   private static final String LOCATION_NAME = LocationName.of(PROJECT_ID, "global").toString();
-
-  private Publisher publisher;
-
-  public OcrTranslateText() throws IOException {
-    publisher = Publisher.newBuilder(
-        ProjectTopicName.of(PROJECT_ID, RESULTS_TOPIC_NAME)).build();
-  }
+  private static final Storage STORAGE = StorageOptions.getDefaultInstance().getService();
 
   @Override
   public void accept(Message message, Context context) {
@@ -119,15 +117,13 @@ public class OcrTranslateText implements BackgroundFunction<Message> {
       // Get the audio contents from the response
       ByteString audioContents = responseAudio.getAudioContent();
 
-      try {
-        PubsubMessage pubsubApiMessage = PubsubMessage.newBuilder().setData(audioContents).build();
+      String newFileName = String.format(
+              "%s_to_%s.mp3", ocrMessage.getFilename(), targetLang);
 
-        publisher.publish(pubsubApiMessage).get();
-        logger.info("Text translated to " + targetLang);
-      } catch (InterruptedException | ExecutionException e) {
-        // Log error (since these exception types cannot be thrown by a function)
-        logger.log(Level.SEVERE, "Error publishing translation save request: " + e.getMessage(), e);
-      }
+      logger.info(String.format("Saving result to %s in bucket %s", newFileName, RESULT_BUCKET));
+      BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(RESULT_BUCKET, newFileName)).build();
+      STORAGE.create(blobInfo, audioContents.toByteArray());
+      logger.info("File saved");
 
       // Write the response to the output file.
       /*try (OutputStream out = new FileOutputStream("output.mp3")) {
