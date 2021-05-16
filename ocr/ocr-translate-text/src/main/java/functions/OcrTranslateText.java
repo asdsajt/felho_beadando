@@ -49,7 +49,7 @@ public class OcrTranslateText implements BackgroundFunction<Message> {
   private static final Logger logger = Logger.getLogger(OcrTranslateText.class.getName());
 
   // TODO<developer> set these environment variables
-  private static final String PROJECT_ID = getenv("my-cloud-project-305911");
+  private static final String PROJECT_ID = getenv("GCP_PROJECT");
   private static final String RESULTS_TOPIC_NAME = getenv("RESULT_TOPIC");
   private static final String LOCATION_NAME = LocationName.of(PROJECT_ID, "global").toString();
 
