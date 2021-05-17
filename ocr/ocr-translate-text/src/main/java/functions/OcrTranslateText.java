@@ -1,22 +1,4 @@
-/*
- * Copyright 2020 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package functions;
-
-// [START functions_ocr_translate]
 
 import com.google.cloud.functions.BackgroundFunction;
 import com.google.cloud.functions.Context;
@@ -52,7 +34,6 @@ import java.util.logging.Logger;
 public class OcrTranslateText implements BackgroundFunction<Message> {
   private static final Logger logger = Logger.getLogger(OcrTranslateText.class.getName());
 
-  // TODO<developer> set these environment variables
   private static final String PROJECT_ID = getenv("GCP_PROJECT");
   private static final String RESULT_BUCKET = System.getenv("RESULT_BUCKET");
   private static final String LOCATION_NAME = LocationName.of(PROJECT_ID, "global").toString();
@@ -125,38 +106,12 @@ public class OcrTranslateText implements BackgroundFunction<Message> {
       STORAGE.create(blobInfo, audioContents.toByteArray());
       logger.info("File saved");
 
-      // Write the response to the output file.
-      /*try (OutputStream out = new FileOutputStream("output.mp3")) {
-        out.write(audioContents.toByteArray());
-        publisher.publish(out).get();
-        System.out.println("Audio content written to file \"output.mp3\"");
-      }*/
     } catch (IOException e) {
       logger.log(Level.SEVERE, "Error publishing translation save request: " + e.getMessage(), e);
     }
 
-
-    /*// Send translated text to (subsequent) Pub/Sub topic
-    String filename = ocrMessage.getFilename();
-    OcrTranslateApiMessage translateMessage = new OcrTranslateApiMessage(
-        translatedText, filename, targetLang);
-    try {
-      ByteString byteStr = ByteString.copyFrom(translateMessage.toPubsubData());
-      PubsubMessage pubsubApiMessage = PubsubMessage.newBuilder().setData(byteStr).build();
-
-      publisher.publish(pubsubApiMessage).get();
-      logger.info("Text translated to " + targetLang);
-    } catch (InterruptedException | ExecutionException e) {
-      // Log error (since these exception types cannot be thrown by a function)
-      logger.log(Level.SEVERE, "Error publishing translation save request: " + e.getMessage(), e);
-    }*/
-
-
-
   }
 
-  // Avoid ungraceful deployment failures due to unset environment variables.
-  // If you get this warning you should redeploy with the variable set.
   private static String getenv(String name) {
     String value = System.getenv(name);
     if (value == null) {
@@ -166,4 +121,4 @@ public class OcrTranslateText implements BackgroundFunction<Message> {
     return value;
   }
 }
-// [END functions_ocr_translate]
+
